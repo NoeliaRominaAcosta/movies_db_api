@@ -3,10 +3,14 @@ const db = require("../../database/models");
 const sequelize = db.sequelize;
 const { Op } = require("sequelize");
 const {checkId} = require('../../helpers')
+const {request} = require('express');
 
-//Aqui tienen otra forma de llamar a cada uno de los modelos
+/* devuelve la url en que estoy parada. del obj request usa protocole 
+que devuelve http y devuelve el host el originalUrl es /movies /*/
 
 const getURL = (req = request) => req.protocol + '://' + req.get('host') + req.originalUrl;
+
+
 const moviesController = {
   list: async(req, res) => {
     try {
@@ -36,6 +40,7 @@ const moviesController = {
     
   },
   detail: async(req, res) => {
+    //chequeo si es un id. esto está en el helper
    if(checkId(req.params.id)){
     return res.status(400).json(checkId(req.params.id));
    }
@@ -145,48 +150,173 @@ const moviesController = {
   //Aqui dispongo las rutas para trabajar con el CRUD
 
   create: async (req, res) =>{
+    const {title, rating,awards,release_date, length, genre_id}=req.body
    try {
-    let movie = await db.Movie.create({
-      title: req.body.title,
-      rating: req.body.rating,
-      awards: req.body.awards,
-      release_date: req.body.release_date,
-      length: req.body.length,
-      genre_id: req.body.genre_id,
+    let genres = await db.Genre.findAll()
+    let genresIds = genres.map(genre => genre.id)
+    if(!genresIds.includes(+genre_id)){
+      let error = new Error('id de genero inexistente')
+      error.status = 404;//le doy instancia al error
+      throw error//arrojo el error
+    }
+    let newMovie = await db.Movie.create({
+      title: title.trim(), 
+      rating,
+      awards, 
+      release_date,
+      length, 
+      genre_id, //que no supere el numero de id presentes
     })
-    
+    if(newMovie){
+      response = {
+        ok: true,
+        meta: {
+          status: 200,
+          url : getURL(req) + newMovie + '/' + newMovie.id //al hacer click te lleva al detalle de pelicula
+        },
+        data: newMovie
+      };
+      return res.status(200).json(response);
+    }
     
    } catch (error) {
     console.log(error);
+    let errors = [];
+    if(error.errors){
+      errors = error.errors.map(error =>{
+        return {
+          path : error.path,
+          msg : error.message,
+          value: error.value
+        }
+        /* 
+        esto pertenece a la fomra en que por consola muestra los errores con los valores
+         path message value que vienen en el objeto para mostrarlo en la respuesta */
+      })
+    }
+   
+    let response = {
+      ok: false,
+      meta: {
+        status: 500,
+      },
+      msg: error.message ? error.message : "Comuniquese con el administrador",
+      errors
+    };
+    return res.status(500).json(response);
    }
   },
-  update: function (req, res) {
-    let movieId = req.params.id;
-    Movies.update(
-      {
-        title: req.body.title,
-        rating: req.body.rating,
-        awards: req.body.awards,
-        release_date: req.body.release_date,
-        length: req.body.length,
-        genre_id: req.body.genre_id,
-      },
-      {
-        where: { id: movieId },
+  update: async (req, res)=> {
+   
+    //chequeo si es un id
+    if(checkId(req.params.id)){
+      return res.status(400).json(checkId(req.params.id));
+     }
+     const {title, rating,awards,release_date, length, genre_id}=req.body
+
+    try {
+      let movies = await db.Movie.findAll()
+      let moviesIds = movies.map(movie => movie.id)
+      if(!moviesIds.includes(+req.params.id)){
+        let error = new Error('id de pelicula inexistente')
+        error.status = 404;//le doy instancia al error
+        throw error//arrojo el error
       }
-    )
-      .then(() => {
-        return res.redirect("/movies");
+    let statusUpdate = await  db.Movie.update(
+        {
+          title: title.trim(),
+          rating,
+          awards,
+          release_date,
+          length: length,
+          genre_id,
+        },
+        {
+          where: { id: req.params.id },
+        }
+      )
+     if(statusUpdate[0] === 1){//la respuesta es 1 si es true y llega la info, devuelve 0 si es false
+     let response = {
+        ok: true,
+        meta: {
+          status: 201,
+        },
+        msg: "los cambios se hicieron con exito"
+      }
+      return res.status(201).json(response)
+     }else{
+      let response = {
+        ok: true,
+        meta: {
+          status: 200,
+        },
+        msg: "no se realizaron cambios"
+      }
+      return res.status(200).json(response)
+     }
+    
+    } catch (error) {
+      console.log(error);
+    let errors = [];
+    if(error.errors){
+      errors = error.errors.map(error =>{
+        return {
+          path : error.path,
+          msg : error.message,
+          value: error.value
+        }
+        /* 
+        esto pertenece a la fomra en que por consola muestra los errores con los valores
+         path message value que vienen en el objeto para mostrarlo en la respuesta */
       })
-      .catch((error) => res.send(error));
+    }
+   
+    let response = {
+      ok: false,
+      meta: {
+        status: 500,
+      },
+      msg: error.message ? error.message : "Comuniquese con el administrador",
+      errors
+    };
+    return res.status(500).json(response);
+   }
+     
+     
   },
-  destroy: function (req, res) {
-    let movieId = req.params.id;
-    Movies.destroy({ where: { id: movieId }, force: true }) // force: true es para asegurar que se ejecute la acción
-      .then(() => {
-        return res.redirect("/movies");
-      })
-      .catch((error) => res.send(error));
+  destroy: async (req, res)=>{
+    try {
+      let movies = await db.Movie.findAll()
+      let moviesIds = movies.map(movie => movie.id)
+      if(!moviesIds.includes(+req.params.id)){
+        let error = new Error('id de pelicula inexistente')
+        error.status = 404;//le doy instancia al error
+        throw error//arrojo el error
+      }
+      let statusDestroy = await db.Movie.destroy(
+        { where: { id: req.params.id }, force: false })
+
+        let response = {
+          ok: true,
+          meta: {
+            status: 200,
+          },
+          msg: "eliminada con exito",
+          statusDestroy
+        }
+        return res.status(200).json(response)
+       
+    } catch (error) {
+      console.log(error);
+      let response = {
+        ok: false,
+        meta: {
+          status: 500,
+        },
+        msg: error.message ? error.message : "Comuniquese con el administrador",
+      };
+    }
+   
   },
 };
 

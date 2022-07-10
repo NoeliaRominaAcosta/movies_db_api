@@ -11,7 +11,15 @@ module.exports = (sequelize, dataTypes) => {
         // updated_at: dataTypes.TIMESTAMP,
         title: {
             type: dataTypes.STRING(500),
-            allowNull: false
+            allowNull: false,
+            validate : {
+                notNull : {
+                    msg : "El title no puede ser nulo"
+                },
+                notEmpty : {
+                    msg : "El titulo de la peli no puede estar vacío"
+                }
+            }
         },
         rating: {
             type: dataTypes.DECIMAL(3, 1).UNSIGNED,
@@ -19,11 +27,27 @@ module.exports = (sequelize, dataTypes) => {
         },
         awards: {
             type: dataTypes.BIGINT(10).UNSIGNED,
-            allowNull: false
+            allowNull: false,
+            validate : {
+                notNull : {
+                    msg : "El awards no puede ser nulo"
+                },
+                notEmpty : {
+                    msg : "Los awards de la peli no puede estar vacío"
+                }
+            }
         },
         release_date: {
             type: dataTypes.DATEONLY,
-            allowNull: false
+            allowNull: false,
+            validate : {
+                notNull : {
+                    msg : "El release_date no puede ser nulo"
+                },
+                notEmpty : {
+                    msg : "El release_date de la peli no puede estar vacío"
+                }
+            }
         },
         length: dataTypes.BIGINT(10),
         genre_id: dataTypes.BIGINT(10)

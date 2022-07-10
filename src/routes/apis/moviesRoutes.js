@@ -9,8 +9,8 @@ router
     .get('/recommended', moviesController.recomended)
     .get('/:id', moviesController.detail)
 // CRUD
-    .post('/create', moviesController.create)
-    .put('/update/:id', moviesController.update)
-    .delete('/delete/:id', moviesController.destroy)
+    .post('/', moviesController.create)
+    .put('/:id?', moviesController.update)
+    .delete('/:id', moviesController.destroy)
 
 module.exports = router;
