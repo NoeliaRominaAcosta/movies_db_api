@@ -2,8 +2,8 @@ const express = require('express');
 const path = require('path');
 const methodOverride = require('method-override');
 const app = express();
-const nodeFetch = require('node-fetch')
-
+/* const nodeFetch = require('node-fetch')
+ */
 //routes
 const indexRouter = require('./routes/index');
 const moviesRoutes = require('./routes/moviesRoutes');

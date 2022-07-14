@@ -113,7 +113,7 @@ const moviesController = {
     }
    
   },
-  recomended: (req, res) => {
+  recomended: async (req, res) => {
    try {
     let movies = await  db.Movie.findAll({
       include: ["genre"],
@@ -182,7 +182,7 @@ const moviesController = {
    } catch (error) {
     console.log(error);
     let errors = [];
-    if(error.errors){
+    if(error.errors){//lo mapea solo si existe
       errors = error.errors.map(error =>{
         return {
           path : error.path,
@@ -190,7 +190,7 @@ const moviesController = {
           value: error.value
         }
         /* 
-        esto pertenece a la fomra en que por consola muestra los errores con los valores
+        esto pertenece a la fomra en que por consolapor el validator en el modelo y muestra los errores con los valores
          path message value que vienen en el objeto para mostrarlo en la respuesta */
       })
     }
@@ -207,7 +207,11 @@ const moviesController = {
    }
   },
   update: async (req, res)=> {
-   
+   if(!req.params.id){
+    let error = new Error('ID requerido');
+    error.status = 404;
+    throw error
+   }
     //chequeo si es un id
     if(checkId(req.params.id)){
       return res.status(400).json(checkId(req.params.id));
@@ -286,6 +290,7 @@ const moviesController = {
   },
   destroy: async (req, res)=>{
     try {
+
       let movies = await db.Movie.findAll()
       let moviesIds = movies.map(movie => movie.id)
       if(!moviesIds.includes(+req.params.id)){
@@ -296,15 +301,27 @@ const moviesController = {
       let statusDestroy = await db.Movie.destroy(
         { where: { id: req.params.id }, force: false })
 
-        let response = {
-          ok: true,
-          meta: {
-            status: 200,
-          },
-          msg: "eliminada con exito",
-          statusDestroy
+        if(statusDestroy){
+          let response = {
+            ok: true,
+            meta: {
+              status: 100,
+            },
+            msg: "eliminada con exito",
+            statusDestroy
+          }
+          return res.status(100).json(response)
+        }else{
+          let response = {
+            ok: true,
+            meta: {
+              status: 200,
+            },
+            msg: "no se hicieron cambios",
+            statusDestroy
+          }
+          return res.status(200).json(response)
         }
-        return res.status(200).json(response)
        
     } catch (error) {
       console.log(error);
@@ -315,6 +332,7 @@ const moviesController = {
         },
         msg: error.message ? error.message : "Comuniquese con el administrador",
       };
+      return res.status(500).json(response);
     }
    
   },

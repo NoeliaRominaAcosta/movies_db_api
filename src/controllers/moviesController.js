@@ -3,8 +3,8 @@ const db = require("../database/models");
 const sequelize = db.sequelize;
 const { Op } = require("sequelize");
 const moment = require("moment");
-const fetch = require("node-fetch");
-
+/* const fetch = require("node-fetch");
+ */
 
 const getURLBase = (req = request) => req.protocol + '://' + req.get('host');
 
@@ -90,11 +90,12 @@ const moviesController = {
       })
       .catch((error) => res.send(error));
   },
-  create: function (req, res) {
+  create:  async (req, res) =>{
     const {title,awards,rating,release_date,length,genre_id} = req.body;
    try {
-    let genresIds = genres.map(genre => genre.id);
     let genres = await db.Genre.findAll();
+    let genresIds = genres.map(genre => genre.id);
+   
     if(!genresIds.includes(+genres_id)){
         let error = new Error('ID de genero inexistente');
         error.status = 404;
