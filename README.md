@@ -5,11 +5,17 @@ Una API Rest Crud basada en NodeJs y Express, utilizando Mysql, Sequelize ORM co
 GET
 
 localhost:3001/api/genres muestra todods los generos
+
 localhost:3001/api/genres/:id 
+
 localhost:3001/api/genres/name/:name 
+
 localhost:3001/api/movies 
+
 localhost:3001/api/movies/new ultimas cinco peliculas
+
 localhost:3001/api/movies/recommended las que tienen un rating +8
+
 
 ********
 POST
